@@ -1,11 +1,19 @@
+
 import cPickle, gzip, numpy
 
 # 1. first step : input data & normalize image data from NMIST
 
 # Load the dataset
-f = gzip.open('mnist.pkl.gz', 'rb')
-train_set, valid_set, test_set = cPickle.load(f)
-f.close()
+
+# not using scikit
+# f = gzip.open('mnist.pkl.gz', 'rb')
+# train_set, valid_set, test_set = cPickle.load(f)
+# f.close()
+
+# using scikit 
+from sklearn.datasets import fetch_mldata
+mnist = fetch_mldata('MNIST original', data_home=custom_data_home)
+
 
 # 2. second step : randomly place our k centroids in random locations
 
