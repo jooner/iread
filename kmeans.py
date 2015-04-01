@@ -9,9 +9,18 @@ f.close()
 
 # 2. second step : randomly place our k centroids in random locations
 
+
+
 # 				LOOP STARTS 
 # 3. third step : classify each data point into one of our k clusters
 # 	 depending on which centroid it's closest to  (use Euclidan distance)
+
+# a. find the nearest cluster center
+def nearest_cluster_center(point, cluster_centers):
+    def sqr_distance_2D(a, b):
+        return (a.x - b.x) ** 2  +  (a.y - b.y) ** 2
+ 
+ 
 
 
 # 4. fourth step : the location of each centroid should change to be 
