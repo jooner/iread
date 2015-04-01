@@ -1,14 +1,8 @@
-import os, struct
-from array import array
+import cPickle, gzip, numpy
 
-digit_images = os.path.join(".", 'digits/train-images')
-digit_labels = os.path.join(".", 'digits/train-labels')
+# 1. first step : normalize image data from NMIST
 
-def load_mnist ():
-  with open(digit_labels, 'rb') as f:
-    labels = array("b", f.read())
-  with open(digit_images, 'rb') as f:
-    images = array("B", f.read())
-  return images, labels
-
-load_mnist()
+# Load the dataset
+f = gzip.open('mnist.pkl.gz', 'rb')
+train_set, valid_set, test_set = cPickle.load(f)
+f.close()
