@@ -12,7 +12,7 @@ from sklearn.datasets import load_digits
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import scale
 
-np.random.seed(42)
+np.random.seed(0)
 
 digits = load_digits()
 data = scale(digits.data)

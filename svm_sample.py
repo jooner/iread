@@ -42,8 +42,8 @@ def run():
     #print mnist.data.shape
     # Trunk the data
 
-    n_train = 1000
-    n_test = 30
+    n_train = 5000
+    n_test = 200
  
     # Define training and testing sets
     indices = arange(len(mnist.data))
@@ -59,8 +59,8 @@ def run():
 
     # Apply a learning algorithm
     print "Applying a learning algorithm..."
-    clf = RandomForestClassifier(n_estimators=10,n_jobs=2)
-    #clf = SVC(kernel="rbf", C=2.8, gamma=.0073)
+    #clf = RandomForestClassifier(n_estimators=10,n_jobs=2)
+    clf = SVC(kernel="rbf", C=2.8, gamma=.0073)
     scores = cross_validation.cross_val_score(clf, X_train, y_train, cv=3)
     print scores
     clf.fit(X_train, y_train)
