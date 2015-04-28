@@ -39,52 +39,40 @@ images, labels = load_mnist()
      5]           6]
 '''
 
-def subtraction (a, b):
-    return a - b
+def euclidean_dist (a, b):        
+    return np.linalg.norm(a - b)
 
-def norm (a):
-    total_distance = 0
-    for element in a:
-        total_distance = total_distance + element**2
-    return (total_distance**0.5)
+def dot_product (a, b):
+    return np.dot(a, b)
 
-def get_euclidean_dist (data_array, single_distance_function, total_distance_function):
-    
-    def python_dist (data_array, single_distance_function, total_distance_function):
-        rows = data_array.shape[0]        
-        columns = data_array.shape[1]
-        output_matrix = np.zeros((columns, columns))
-        for column1 in range(columns):
-            for column2 in range(columns):
-                single_differences = []
-                for row in range(rows):
-                    single_differences.append(single_distance_function(
-                            data_array[row][column1], data_array[row][column2]))
-                total_distance = total_distance_function(single_differences)
-                output_matrix[column1][column2] = total_distance
-        return output_matrix
+def RBF (a, b, gamma):
+    if gamma < 0:
+        return np.exp(gamma * ((np.linalg.norm(a - b))**2))
+    else:
+        raise ValueError("gamma cannot be positive")    
 
-    distance_matrix = python_dist (data_array, single_distance_function, total_distance_function)
-    
-    return distance_matrix
+def get_dist (data_array, kernel, gamma=None):
+    columns = data_array.shape[1]
+    output_matrix = np.zeros((columns, columns))
+    for column1 in range(columns):
+        for column2 in range(columns):
+            if gamma:
+                distance = kernel(data_array[:, column1], data_array[:, column2], gamma)
+            else:
+                distance = kernel(data_array[:, column1], data_array[:, column2])
+            output_matrix[column1][column2] = distance
+    return output_matrix
 
 test_array = np.array([[1,2],[3,4],[5,6]])
 
-print "\nDistance matrix of:\n", test_array, "\nis:\n"
+print "\nEuclidean distance matrix of:\n", test_array, "\nis:\n"
 
-print get_euclidean_dist(test_array, subtraction, norm), "\n"
+print get_dist(test_array, euclidean_dist), "\n"
 
+print "\nDot product distance matrix of:\n", test_array, "\nis:\n"
 
+print get_dist(test_array, dot_product), "\n"
 
+print "\nRBF distance matrix of:\n", test_array, "\nis:\n"
 
-
-
-
-
-
-
-
-                    
-
-
-
+print get_dist(test_array, RBF, -10**(-2)), "\n"
