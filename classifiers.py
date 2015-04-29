@@ -1,4 +1,5 @@
 class BaseLibSVM(six.with_metaclass(ABCMeta, BaseEstimator)):
+
   """Base class for estimators that use libsvm as backing library
   This implements support vector machine classification and regression.
   Parameter documentation is in the derived `SVC` class.
