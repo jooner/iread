@@ -32,6 +32,7 @@ class SVMTrain(object):
   def lagrange_calc(self, X, y):
     num_samples, _ = X.shape
     K = kernel.get_dist(X, KERNEL, gamma=None)
+    # known problem with inconsisten dimensions
     P = matrix(np.outer(y, y) * K)
     q = matrix(-1 * np.ones(num_samples))
     G_std = matrix(np.diag(np.ones(num_samples) * -1))

@@ -23,6 +23,7 @@ def get_dist (data_array, kernel, gamma=None):
   for column1 in range(columns):
     for column2 in range(columns):
       if gamma:
+        # known problem --> use getattr() or global()/local()
         distance = euclidean_dist(data_array[:, column1], data_array[:, column2], gamma)
       else:
         distance = euclidean_dist(data_array[:, column1], data_array[:, column2])
