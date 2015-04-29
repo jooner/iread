@@ -47,7 +47,8 @@ class SVMTrain(object):
     print np.ravel(solution['x'])
     return np.ravel(solution['x'])
 
-  def make_model(X, y, lagrange):
+  def make_model(self, X, y, lagrange):
+    supp_idx = lagrange > 10e-5
     supp_mult = lagrange[supp_idx]
     supp_vectors, supp_vector_labels = X[supp_idx], y[supp_idx]
     bias = np.mean([y_k - SVMTest(kernel=self._kernel,
@@ -58,7 +59,7 @@ class SVMTrain(object):
                                   ).predict(x_k)
     for (y_k, x_k) in zip(supp_vector_labels, supp_vectors)])
     return SVMTest(kernel=self.kernel, bias=bias, weights=supp_mult,
-                   supp_vectors=support_vectors,
+                   supp_vectors=supp_vectors,
                    supp_vector_labels=supp_vector_labels)
 
   def train(self, X, y, transpose):
