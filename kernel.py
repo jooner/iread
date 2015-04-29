@@ -2,22 +2,19 @@
 
 import numpy as np
 
-class Kernel(object):
-  """Handles different types of kernels"""
-
 def euclidean_dist (a, b):        
   return np.linalg.norm(a - b)
 
 def dot_product (a, b):
   return np.dot(a, b)
 
-def RBF (a, b, gamma):
+def rbf (a, b, gamma):
   if gamma < 0:
     return np.exp(gamma * ((np.linalg.norm(a - b))**2))
   else:
-    raise ValueError("gamma cannot be positive")    
+    raise ValueError("gamma cannot be positive")
 
-def get_dist (input_data_array, kernel, transpose=False, gamma=None):
+def get_dist (input_data_array, kernel='rbf', transpose=False, gamma=0.1):
   if transpose:
     data_array = np.transpose(input_data_array)
   else:
@@ -26,11 +23,12 @@ def get_dist (input_data_array, kernel, transpose=False, gamma=None):
   output_matrix = np.zeros((columns, columns))
   for column1 in range(columns):
     for column2 in range(columns):
-      if gamma:
-        # known problem --> use getattr() or global()/local()
-        distance = euclidean_dist(data_array[:, column1], data_array[:, column2], gamma)
-      else:
+      if kernel == "euclidean_dist":
         distance = euclidean_dist(data_array[:, column1], data_array[:, column2])
+      elif kernel == "dot_product":
+        distance = dot_product(data_array[:, column1], data_array[:, column2])
+      else:
+        distance = rbf(data_array[:, column1], data_array[:, column2], gamma)
       output_matrix[column1][column2] = distance
   if transpose:
     return np.transpose(output_matrix)
