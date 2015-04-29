@@ -29,10 +29,10 @@ class SVMTrain(object):
     self.gamma = gamma
     self.C = C
 
-  def lagrange_calc(self, X, y):
+  def lagrange_calc(self, X, y, transpose):
     num_samples, _ = X.shape
-    K = kernel.get_dist(X, KERNEL, gamma=None)
-    # known problem with inconsisten dimensions
+    print ("num_samples : ", num_samples)
+    K = kernel.get_dist(X, KERNEL, transpose=transpose, gamma=None)
     P = matrix(np.outer(y, y) * K)
     q = matrix(-1 * np.ones(num_samples))
     G_std = matrix(np.diag(np.ones(num_samples) * -1))
@@ -63,8 +63,8 @@ class SVMTrain(object):
                    supp_vectors=support_vectors,
                    supp_vector_labels=supp_vector_labels)
 
-  def train(self, X, y):
-    return self.make_model(X, y, self.lagrange_calc(X, y))
+  def train(self, X, y, transpose):
+    return self.make_model(X, y, self.lagrange_calc(X, y, transpose))
 
 class SVMTest(object):
   def __init__(self, kernel, bias, weights, supp_vectors, supp_vector_labels):
@@ -84,7 +84,9 @@ class SVMTest(object):
     return np.sign(result).item()
 
 def main():
-  mnist = fetch_mldata('MNIST original')
+  ## Default is True
+  transpose = True
+  mnist = fetch_mldata('MNIST original', transpose_data = transpose)
   # Trunk the data
   n_train = 500
   n_test = 20
@@ -95,10 +97,11 @@ def main():
   test_idx = random.sample(indices, n_test)
   X_train, y_train = mnist.data[train_idx], mnist.target[train_idx]
   X_test, y_test = mnist.data[test_idx], mnist.target[test_idx]
-  print (X_train, y_train, X_test, y_test)
-  clf = SVMTrain(KERNEL, GAMMA, C_VAL).train(X_train, y_train)
+  print (X_train, y_train, X_test, y_test) 
+  clf = SVMTrain(KERNEL, GAMMA, C_VAL).train(X_train, y_train, transpose)
   y_pred = clf.predict(X_test)
   print (y_pred, y_test)
+
 
 if __name__ == "__main__":
   start_time = time()

@@ -17,7 +17,11 @@ def RBF (a, b, gamma):
   else:
     raise ValueError("gamma cannot be positive")    
 
-def get_dist (data_array, kernel, gamma=None):
+def get_dist (input_data_array, kernel, transpose=False, gamma=None):
+  if transpose:
+    data_array = np.transpose(input_data_array)
+  else:
+    data_array = input_data_array
   columns = data_array.shape[1]
   output_matrix = np.zeros((columns, columns))
   for column1 in range(columns):
@@ -28,4 +32,7 @@ def get_dist (data_array, kernel, gamma=None):
       else:
         distance = euclidean_dist(data_array[:, column1], data_array[:, column2])
       output_matrix[column1][column2] = distance
-  return output_matrix
+  if transpose:
+    return np.transpose(output_matrix)
+  else:
+    return output_matrix
