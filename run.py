@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
-
 # libraries for svm module
 from cvxopt import solvers, matrix
 
@@ -10,11 +8,15 @@ import matplotlib.pyplot as plt
 import scipy.sparse as sp
 import kernel
 from time import time
+import svmcmpl
 
 # libraries for training and testing
 import random
 from sklearn import cross_validation, metrics
 from sklearn.datasets import fetch_mldata
+
+def linear():
+  return lambda x, y: np.inner(x, y)
 
 KERNEL = 'RBF'
 GAMMA = 1e-5
@@ -31,19 +33,18 @@ class SVMTrain(object):
 
   def lagrange_calc(self, X, y, transpose):
     num_samples, _ = X.shape
-    print ("num_samples : ", num_samples)
+    print "num_samples : ", num_samples
     K = kernel.get_dist(X, KERNEL, transpose=transpose, gamma=None)
     P = matrix(np.outer(y, y) * K)
     q = matrix(-1 * np.ones(num_samples))
     G_std = matrix(np.diag(np.ones(num_samples) * -1))
-    h_std = matrix(np.zeros(num_samples))
     G_slack = matrix(np.diag(np.ones(num_samples)))
-    h_slack = matrix(np.ones(num_samples) * self.C)
-    # vertically stack
     G = matrix(np.vstack((G_std, G_slack)))
+    h_std = matrix(np.zeros(num_samples))
+    h_slack = matrix(np.ones(num_samples) * self.C)    
     h = matrix(np.vstack((h_std, h_slack)))
-    A = matrix(y, (1, num_samples))
-    b = matrix(0.0)
+    A = matrix(list(y), (1, num_samples))
+    b = matrix(.0)
     # refer to quadratic programming in
     # http://cvxopt.org/userguide/coneprog.html#optional-solvers
     solution = solvers.qp(P, q, G, h, A, b)
@@ -97,13 +98,13 @@ def main():
   test_idx = random.sample(indices, n_test)
   X_train, y_train = mnist.data[train_idx], mnist.target[train_idx]
   X_test, y_test = mnist.data[test_idx], mnist.target[test_idx]
-  print (X_train, y_train, X_test, y_test) 
+  print X_train, y_train, X_test, y_test
   clf = SVMTrain(KERNEL, GAMMA, C_VAL).train(X_train, y_train, transpose)
   y_pred = clf.predict(X_test)
-  print (y_pred, y_test)
+  print y_pred, y_test
 
 
 if __name__ == "__main__":
   start_time = time()
   main()
-  print ("Runtime: ", time() - start_time)
+  print "Runtime: ", time() - start_time
