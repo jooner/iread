@@ -44,7 +44,6 @@ class SVMTrain(object):
     # refer to quadratic programming in
     # http://cvxopt.org/userguide/coneprog.html#optional-solvers
     solution = solvers.qp(P, q, G, h, A, b)
-    print np.ravel(solution['x'])
     return np.ravel(solution['x'])
 
   def make_model(X, y, lagrange):

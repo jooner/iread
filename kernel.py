@@ -14,7 +14,7 @@ def rbf (a, b, gamma):
   else:
     raise ValueError("gamma cannot be positive")
 
-def get_dist (input_data_array, kernel='rbf', transpose=False, gamma=0.1):
+def get_dist (input_data_array, kernel='rbf', transpose=False, gamma=0):
   if transpose:
     data_array = np.transpose(input_data_array)
   else:
