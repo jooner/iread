@@ -35,7 +35,7 @@ from sklearn.datasets import fetch_mldata
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.utils import shuffle
 import time
-
+"""
 def run():
     mnist = fetch_mldata('MNIST original')
     #mnist.data, mnist.target = shuffle(mnist.data, mnist.target)
@@ -45,7 +45,7 @@ def run():
     print dir(mnist.data)
     n_train = 5000
     n_test = 200
-""" 
+
     # Define training and testing sets
     indices = arange(len(mnist.data))
     random.seed(0)
