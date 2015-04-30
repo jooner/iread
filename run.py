@@ -28,10 +28,19 @@ class SVMTrain(object):
     self.C = C
     self.transpose = transpose
 
+  def _gram_matrix(self, X):
+    n_samples, n_features = X.shape
+    K = np.zeros((n_samples, n_samples))
+    # TODO(tulloch) - vectorize
+    for i, x_i in enumerate(X):
+      for j, x_j in enumerate(X):
+        K[i, j] = kernel.rbf(x_i, x_j, GAMMA)
+    return K
+
   def lagrange_calc(self, X, y):
     num_samples, _ = X.shape
     print "num_samples : ", num_samples
-    K = kernel.get_dist(X, kernel=KERNEL, transpose=self.transpose, gamma=GAMMA)
+    K = self._gram_matrix(X)
     P = matrix(np.outer(y, y) * K)
     q = matrix(-1 * np.ones(num_samples))
     G_pos = matrix(np.diag(np.ones(num_samples)))
@@ -82,8 +91,7 @@ class SVMTest(object):
     for z_i, x_i, y_i in zip(self.weights,
                              self.supp_vectors,
                              self.supp_vector_labels):
-        result += z_i * y_i * kernel.get_dist(x, kernel=KERNEL,
-                              transpose=self.transpose, gamma=GAMMA)
+        result += z_i * y_i * kernel.rbf(x_i, x, GAMMA)
     return np.sign(result).item()
 
 def main():
