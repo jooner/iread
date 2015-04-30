@@ -1,78 +1,135 @@
-__author__ = 'trevorlutzow'
+# -*- coding: utf-8 -*-
 
-import os, struct
-from array import array
+# libraries for svm module
+from cvxopt import solvers, matrix
+
+import matplotlib.pyplot as plt
 import numpy as np
-#from numba.decorators import jit, autojit
+import matplotlib.pyplot as plt
+import scipy.sparse as sp
+from kernel import *
+from time import time
 
-digit_images = os.path.join(".", 'digits/train-images')
-digit_labels = os.path.join(".", 'digits/train-labels')
+# libraries for training and testing
+import random
+from sklearn import cross_validation, metrics
+from sklearn.datasets import fetch_mldata
 
-def load_mnist ():
-  with open(digit_labels, 'rb') as f:
-    labels = array("b", f.read())
-  with open(digit_images, 'rb') as f:
-    images = array("B", f.read())
-  return images, labels
+KERNEL = 'rbf'
+GAMMA = -1e-5
+RAND_SEED = 0
+C_VAL = 1
 
-images, labels = load_mnist()
+class SVMTrain(object):
+  """Implementation of SVM Classifier"""
 
-'''
- Each data point should be a column vector so that our data_array looks like:
-    [ 1st     2nd     ...    last
-      data    data    ...    data
-      point   point   ...    point ]
-'''
-'''
- This will calculate pairwise distances by subtracting vectors so that the 
- output is:
+  def __init__(self, kernel, gamma, transpose):
+    self.kernel = kernel
+    self.gamma = gamma
+    self.transpose = transpose
 
-    [ 1st-1st    1st-2nd    ...    1st-last
-      2nd-1st    2nd-2nd    ...    2nd-last
-      ...        ...        ...    ...-last
-      last-1st   last-2nd   ...    last-last ]
+  def lagrange_calc(self, X, y):
+    num_samples, _ = X.shape
+    K = matrify(X, self.kernel, self.gamma)
+    P = matrix(np.outer(y, y) * K)
+    q = matrix(-1 * np.ones(num_samples))
+    G_pos = matrix(np.diag(np.ones(num_samples)))
+    G_neg = matrix(np.diag(np.ones(num_samples)) * -1)
+    G = matrix(np.vstack((G_neg, G_pos)))
+    h_std = matrix(np.zeros(num_samples))
+    h_slack = matrix(np.ones(num_samples))    
+    h = matrix(np.vstack((h_std, h_slack)))
+    A = matrix(list(y), (1, num_samples))
+    b = matrix(0.0)
+    # refer to quadratic programming in
+    # http://cvxopt.org/userguide/coneprog.html#optional-solvers
+    solution = solvers.qp(P, q, G, h, A, b)
+    return np.ravel(solution['x'])
 
- For example, get_euclidean_dist ([[1, 2],[3,4],[5,6]]) = 
-        [[0, sqrt(3)],[sqrt(3), 0]] where our data points are:
-    [1           [2
-     3    and     4
-     5]           6]
-'''
+  def make_model(self, X, y, lagrange):
+    
+    supp_idx = []
+    supp_mult = []
+    supp_vectors = []
+    supp_vector_labels = []
+    for idx, val in enumerate(lagrange):
+      if val > 1e-5:
+        supp_idx.append(idx)
+        supp_mult.append(val)
+        supp_vectors.append(y[idx])
+        supp_vector_labels.append(X[idx])
+    supp_mult = np.array(supp_mult)
+    supp_vectors = np.array(supp_vectors)
+    supp_vector_labels = np.array(supp_vector_labels)
 
-def euclidean_dist (a, b):        
-    return np.linalg.norm(a - b)
+    """
+    supp_idx = lagrange > 1e-5
+    supp_mult = lagrange[supp_idx]
 
-def dot_product (a, b):
-    return np.dot(a, b)
+    supp_vectors, supp_vector_labels = X[supp_idx], y[supp_idx]
+    """
 
-def RBF (a, b, gamma):
-    if gamma < 0:
-        return np.exp(gamma * ((np.linalg.norm(a - b))**2))
+    bias = np.mean([y_k - SVMTest(kernel=self.kernel,
+                                  bias=0.0,
+                                  weights=supp_mult,
+                                  supp_vectors=supp_vectors,
+                                  transpose=self.transpose,
+                                  supp_vector_labels=supp_vector_labels
+                                  ).predict(x_k)
+    for (y_k, x_k) in zip(supp_vector_labels, supp_vectors)])
+    return SVMTest(kernel=self.kernel, bias=bias, weights=supp_mult,
+                   supp_vectors=supp_vectors, transpose=self.transpose,
+                   supp_vector_labels=supp_vector_labels)
+
+  def train(self, X, y):
+    return self.make_model(X, y, self.lagrange_calc(X, y))
+
+class SVMTest(object):
+  def __init__(self, kernel, bias, weights, supp_vectors,
+               transpose, supp_vector_labels):
+    self.kernel = kernel
+    self.bias = bias
+    self.weights = weights
+    self.supp_vectors = supp_vectors
+    self.transpose = transpose
+    self.supp_vector_labels = supp_vector_labels
+
+  def predict(self, x):
+    """Computes the SVM prediction on the given features x"""
+    result = self.bias
+    if self.kernel == "euclidean_dist":
+      kernel = lambda x, y: euclidean_dist(x, y)
+    elif self.kernel == "dot_product":
+      kernel = lambda x, y: dot_product(x, y)
     else:
-        raise ValueError("gamma cannot be positive")    
+      kernel = lambda x, y, z: rbf(x, y, z)
+    for z_i, x_i, y_i in zip(self.weights,
+                             self.supp_vectors,
+                             self.supp_vector_labels):
+        result += z_i * y_i * kernel(x_i, x, GAMMA)
+    return np.sign(result)
 
-def get_dist (data_array, kernel, gamma=None):
-    columns = data_array.shape[1]
-    output_matrix = np.zeros((columns, columns))
-    for column1 in range(columns):
-        for column2 in range(columns):
-            if gamma:
-                distance = kernel(data_array[:, column1], data_array[:, column2], gamma)
-            else:
-                distance = kernel(data_array[:, column1], data_array[:, column2])
-            output_matrix[column1][column2] = distance
-    return output_matrix
+def main():
+  # Default is True
+  transpose = True
+  mnist = fetch_mldata('MNIST original', transpose_data = transpose)
+  # Truncate the data
+  n_train = 100
+  n_test = 10
+  # Split training and testing sets
+  indices = np.arange(len(mnist.data))
+  random.seed(RAND_SEED)
+  train_idx = random.sample(indices, n_train)
+  test_idx = random.sample(indices, n_test)
+  X_train, y_train = mnist.data[train_idx], mnist.target[train_idx]
+  X_test, y_test = mnist.data[test_idx], mnist.target[test_idx]
+  clf = SVMTrain(KERNEL, GAMMA, transpose).train(X_train, y_train)
+  y_pred = clf.predict(X_test)
+  print y_pred, y_test
 
-test_array = np.array([[1,2],[3,4],[5,6]])
 
-print "\nEuclidean distance matrix of:\n", test_array, "\nis:\n"
 
-print get_dist(test_array, euclidean_dist), "\n"
-
-print "\nDot product distance matrix of:\n", test_array, "\nis:\n"
-
-print get_dist(test_array, dot_product), "\n"
-
-print "\nRBF distance matrix of:\n", test_array, "\nis:\n"
-
-print get_dist(test_array, RBF, -10**(-2)), "\n"
+if __name__ == "__main__":
+  start_time = time()
+  main()
+  print "Runtime: ", time() - start_time
