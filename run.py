@@ -3,10 +3,11 @@
 # libraries for svm module
 from cvxopt import solvers, matrix
 
+import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.sparse as sp
-import kernel
+from kernel import *
 from time import time
 
 # libraries for training and testing
@@ -14,7 +15,7 @@ import random
 from sklearn import cross_validation, metrics
 from sklearn.datasets import fetch_mldata
 
-KERNEL = 'euclidian_dist'
+KERNEL = 'rbf'
 GAMMA = -1e-5
 RAND_SEED = 0
 C_VAL = 1
@@ -22,32 +23,21 @@ C_VAL = 1
 class SVMTrain(object):
   """Implementation of SVM Classifier"""
 
-  def __init__(self, kernel, gamma, C, transpose):
+  def __init__(self, kernel, gamma, transpose):
     self.kernel = kernel
     self.gamma = gamma
-    self.C = C
     self.transpose = transpose
-
-  def _gram_matrix(self, X):
-    n_samples, n_features = X.shape
-    K = np.zeros((n_samples, n_samples))
-    # TODO(tulloch) - vectorize
-    for i, x_i in enumerate(X):
-      for j, x_j in enumerate(X):
-        K[i, j] = kernel.rbf(x_i, x_j, GAMMA)
-    return K
 
   def lagrange_calc(self, X, y):
     num_samples, _ = X.shape
-    print "num_samples : ", num_samples
-    K = self._gram_matrix(X)
+    K = matrify(X, self.kernel, self.gamma)
     P = matrix(np.outer(y, y) * K)
     q = matrix(-1 * np.ones(num_samples))
     G_pos = matrix(np.diag(np.ones(num_samples)))
     G_neg = matrix(np.diag(np.ones(num_samples)) * -1)
     G = matrix(np.vstack((G_neg, G_pos)))
     h_std = matrix(np.zeros(num_samples))
-    h_slack = matrix(np.ones(num_samples) * self.C)    
+    h_slack = matrix(np.ones(num_samples))    
     h = matrix(np.vstack((h_std, h_slack)))
     A = matrix(list(y), (1, num_samples))
     b = matrix(0.0)
@@ -57,7 +47,7 @@ class SVMTrain(object):
     return np.ravel(solution['x'])
 
   def make_model(self, X, y, lagrange):
-    supp_idx = lagrange > 10e-5
+    supp_idx = lagrange > 1e-5
     supp_mult = lagrange[supp_idx]
     supp_vectors, supp_vector_labels = X[supp_idx], y[supp_idx]
     bias = np.mean([y_k - SVMTest(kernel=self.kernel,
@@ -88,18 +78,25 @@ class SVMTest(object):
   def predict(self, x):
     """Computes the SVM prediction on the given features x"""
     result = self.bias
+    if self.kernel == "euclidean_dist":
+      kernel = lambda x, y: euclidean_dist(x, y)
+    elif self.kernel == "dot_product":
+      kernel = lambda x, y: dot_product(x, y)
+    else:
+      kernel = lambda x, y, z: rbf(x, y, z)
     for z_i, x_i, y_i in zip(self.weights,
                              self.supp_vectors,
                              self.supp_vector_labels):
-        result += z_i * y_i * kernel.rbf(x_i, x, GAMMA)
+        result += z_i * y_i * kernel(x_i, x, GAMMA)
+        print (z_i, y_i)
     return np.sign(result).item()
 
 def main():
-  ## Default is True
+  # Default is True
   transpose = True
   mnist = fetch_mldata('MNIST original', transpose_data = transpose)
-  # Trunk the data
-  n_train = 500
+  # Truncate the data
+  n_train = 100
   n_test = 10
   # Split training and testing sets
   indices = np.arange(len(mnist.data))
@@ -108,9 +105,10 @@ def main():
   test_idx = random.sample(indices, n_test)
   X_train, y_train = mnist.data[train_idx], mnist.target[train_idx]
   X_test, y_test = mnist.data[test_idx], mnist.target[test_idx]
-  clf = SVMTrain(KERNEL, GAMMA, C_VAL, transpose).train(X_train, y_train)
+  clf = SVMTrain(KERNEL, GAMMA, transpose).train(X_train, y_train)
   y_pred = clf.predict(X_test)
   print y_pred, y_test
+
 
 
 if __name__ == "__main__":

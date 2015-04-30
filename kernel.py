@@ -12,9 +12,23 @@ def rbf (a, b, gamma):
   if gamma < 0:
     return np.exp(gamma * ((np.linalg.norm(a - b))**2))
   else:
-    raise ValueError("gamma cannot be positive")
+    raise ValueError("Invalid Gamma")
+
+def matrify(X, kernel, gamma=None):
+  columns, _ = X.shape
+  K = np.zeros((columns, columns))
+  for i, x_i in enumerate(X):
+    for j, x_j in enumerate(X):
+      if kernel == "euclidean_dist":
+        K[i, j] = euclidean_dist(x_i, x_j)
+      elif kernel == "dot_product":
+        K[i, j] = dot_product(x_i, x_j)
+      else:
+        K[i, j] = rbf(x_i, x_j, gamma)
+  return K
 
 def get_dist (input_data_array, kernel='rbf', transpose=False, gamma=0):
+
   #if transpose:
   #  data_array = np.transpose(input_data_array)
   #else:
