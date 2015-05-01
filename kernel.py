@@ -26,3 +26,16 @@ def matrify(X, kernel, gamma=None):
       else:
         K[i, j] = rbf(x_i, x_j, gamma)
   return K
+
+def get_dist (input_data_array, kernel='rbf', transpose=False, gamma=0):
+
+  for column1 in range(columns):
+    for column2 in range(columns):
+      if kernel == "euclidean_dist":
+        distance = euclidean_dist(data_array[:, column1], data_array[:, column2])
+      elif kernel == "dot_product":
+        distance = dot_product(data_array[:, column1], data_array[:, column2])
+      else:
+        distance = np.exp(gamma * ((np.linalg.norm(a - b))**2))
+  return distance
+

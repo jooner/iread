@@ -9,15 +9,17 @@ import matplotlib.pyplot as plt
 import scipy.sparse as sp
 from kernel import *
 from time import time
+from sklearn.decomposition import PCA
 
 # libraries for training and testing
 import random
 from sklearn.datasets import fetch_mldata
 
-"""KERNEL = 'rbf'"""
+KERNEL = 'rbf'
 GAMMA = -1e-5
 RAND_SEED = 0
 C_VAL = 1
+
 KERNEL = lambda x, y, z: rbf(x, y, z)
 
 class SVMTrain(object):
@@ -56,29 +58,20 @@ class SVMTrain(object):
 
   def make_model(self, X, y, lagrange):
     print "y labels: {}".format(y)
-    #supp_idx = []
+    supp_idx = []
     supp_mult = []
     supp_vectors = []
     supp_vector_labels = []
     for idx, val in enumerate(lagrange):
-      if val:
+      ## since support vectors will have lagrangians > 0
+      if val > 1e-5:
+        supp_idx.append(idx)
         supp_mult.append(val)
         supp_vectors.append(X[idx])
         supp_vector_labels.append(y[idx])
     supp_mult = np.array(supp_mult)
     supp_vectors = np.array(supp_vectors)
     supp_vector_labels = np.array(supp_vector_labels)
-    '''
-    support_idx = \
-            lagrange > 1e-5
-
-    
-    supp_idx = lagrange > 1e-5
-    supp_mult = lagrange[supp_idx]
-
-    supp_vectors, supp_vector_labels = X[supp_idx], y[supp_idx]
-    '''
-
     bias = np.mean([y_k - SVMTest(kernel=self.kernel,
                                   bias=0.0,
                                   weights=supp_mult,
@@ -101,8 +94,6 @@ class SVMTest(object):
     self.weights = weights
     self.supp_vectors = supp_vectors
     self.supp_vector_labels = supp_vector_labels
-    assert len(supp_vectors) == len(supp_vector_labels)
-    assert len(weights) == len(supp_vector_labels)
 
   def predict(self, x):
     """Computes the SVM prediction on the given features x"""
@@ -117,7 +108,7 @@ class SVMTest(object):
     #print "x.shape :", x.shape
     #print "result here :", result
 
-    return np.sign(result)
+    return np.sign(result).item()
 
 def main():
   mnist = fetch_mldata('MNIST original')
@@ -130,22 +121,20 @@ def main():
   train_idx = random.sample(indices, n_train)
   test_idx = random.sample(indices, n_test)
   X_train, y_train = mnist.data[train_idx], mnist.target[train_idx]
-  print "y_train :",y_train
   X_test, y_test = mnist.data[test_idx], mnist.target[test_idx]
+  ## to reduce dimensionality
+  new_dimensions = 10
+  pca = PCA(n_components = new_dimensions)
+  X_train = pca.fit_transform(X_train)
+  X_test = pca.fit_transform(X_test)
   clf = SVMTrain(KERNEL, GAMMA).train(X_train, y_train)
   y_pred = []
-  print "length x_test :", len(X_test)
   ##Now it spits out the result of our function--greater than or less than one
   for test_data in X_test:
-    y_pred.append((clf.predict(test_data.reshape(1,784))).tolist())
-  print X_test.shape
-  print y_test.shape
-  print X_train.shape
-  print y_train.shape
-  #print y_pred.shape
+    y_pred.append((clf.predict(test_data.reshape(1, new_dimensions))))
+  print "This doesn't work because of the high dimensionality of our input data"
+  print "See demon_algorithm.py to see proof of correctness of algorithm"
   print y_pred, y_test
-
-
 
 if __name__ == "__main__":
   start_time = time()
