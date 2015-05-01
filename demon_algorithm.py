@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import scipy.sparse as sp
 from kernel import *
 from time import time
+from math import sin, cos
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -103,20 +104,18 @@ class SVMTest(object):
 def main():
   mnist = fetch_mldata('MNIST original')
   # Truncate the data
-  n_train = 10
-  ## Some random numbers-- we will test on a 2D plot.
-  X_train = np.matrix([[-0.98170434, -1.25171134], [ 1.92679651, -0.10887425], 
-                      [-0.16095713, -0.26463176], [-3.00061457, -0.23990261],
-                      [ 0.28354673, -0.28531887], [-1.80987487, -0.99691766], 
-                      [-1.09405855,  0.0522519 ], [ 1.38711091, -1.75251531], 
-                      [ 0.87077942, -1.90254197], [ 0.58975878,  0.72783655]])
+  n_train = 1000
+  ## Some n_train random numbers that we will test on in 2-D.
+  X_train = np.empty([n_train, 2])
+  for i in xrange(n_train):
+    X_train[i][0], X_train[i][1] = random.uniform(-5, 5), random.uniform(-5, 5)
   ## classify points as either above or below the line
   y_train = []
-  for element in X_train:
-    if np.sum(element) < 0:
-        y_train.append(-1.0)
+  for el in X_train:
+    if el[0] - el[1] < 0:
+      y_train.append(1.0)
     else:
-        y_train.append(1.0)
+      y_train.append(-1.0)
   y_train = np.matrix(y_train).reshape(n_train, 1)
   clf = SVMTrain(KERNEL, GAMMA).train(X_train, y_train)
   plot(clf, X_train, y_train, 20, 'test.pdf')
