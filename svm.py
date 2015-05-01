@@ -12,7 +12,6 @@ from time import time
 
 # libraries for training and testing
 import random
-from sklearn import cross_validation, metrics
 from sklearn.datasets import fetch_mldata
 
 KERNEL = 'rbf'
@@ -114,8 +113,8 @@ def main():
   transpose = True
   mnist = fetch_mldata('MNIST original', transpose_data = transpose)
   # Truncate the data
-  n_train = 100
-  n_test = 10
+  n_train = 40000
+  n_test = 1000
   # Split training and testing sets
   indices = np.arange(len(mnist.data))
   random.seed(RAND_SEED)
