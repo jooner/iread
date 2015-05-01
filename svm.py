@@ -15,12 +15,11 @@ import random
 from sklearn import cross_validation, metrics
 from sklearn.datasets import fetch_mldata
 
-KERNEL = 'rbf'
+"""KERNEL = 'rbf'"""
 GAMMA = -1e-5
 RAND_SEED = 0
 C_VAL = 1
-'''rbfkernel = lambda x, y, z: rbf(x, y, z)'''
-rbfkernel = lambda x, y: np.inner(x, y)
+KERNEL = lambda x, y, z: rbf(x, y, z)
 
 class SVMTrain(object):
   """Implementation of SVM Classifier"""
@@ -95,7 +94,7 @@ class SVMTrain(object):
 class SVMTest(object):
   def __init__(self, kernel, bias, weights, supp_vectors,
                supp_vector_labels):
-    self.kernel = rbfkernel
+    self.kernel = kernel
     self.bias = bias
     self.weights = weights
     self.supp_vectors = supp_vectors
@@ -111,7 +110,7 @@ class SVMTest(object):
     for z_i, x_i, y_i in zip(self.weights,
                              self.supp_vectors,
                              self.supp_vector_labels):
-        result += z_i * y_i * np.inner(x, x_i)
+        result += z_i * y_i * self.kernel(x, x_i, GAMMA)
     print "x.shape :", x.shape
     print "result :", result
 
